@@ -2,7 +2,7 @@
   <div class="card m-2">
       <div class="table-responsive">
           <table class="table">
-                <tr v-for="(row, rowIndex) in gridMatrix" :key="rowIndex">          
+                <tr v-for="(row, rowIndex) in gridMatrix" :key="rowIndex">  
                     <td  
                     v-for="(col, colIndex) in row" :key="colIndex"
                     :class="{
@@ -12,7 +12,7 @@
                     @mousedown.prevent="mouseDown(rowIndex,colIndex)"
                     @mouseup="mouseUp()"
                     @mouseenter="changeNodePosition(rowIndex,colIndex)"
-                    @mouseleave="cleareNodePosition(rowIndex,colIndex)"></td>
+                    @mouseleave="cleareNodePosition(rowIndex,colIndex)"></td>   
                 </tr>
             </table>
         </div>
@@ -21,6 +21,7 @@
 <script>
 
 export default {
+    props:['selectedAlgorithme'],
     data: () => {
         return{
             startNodePosition: {x:null, y:null},
@@ -36,7 +37,7 @@ export default {
     methods: {
         calculateDocDimens(){
             this.cols = Math.floor((document.documentElement.clientWidth / 26 ));
-            this.rows = Math.floor((document.documentElement.clientHeight / 28 ));
+            this.rows = Math.floor((document.documentElement.clientHeight / 35 ));
         },
         cereateGridMatrix(){
             for(let row = 0; row < this.rows; row++){
@@ -159,13 +160,17 @@ export default {
         margin-bottom: 0px;
     }
     .startNode{
-        background-color: blue;
+        background: url('../assets/location_marker.svg');
+        background-position: center;
+        background-repeat: no-repeat;
     }
     .targetNode{
-        background-color: green;
+        background: url('../assets/target_marker.svg');
+        background-position: center;
+        background-repeat: no-repeat;
     }
     .wallNode{
-        background-color: #003049;
+        background-color: #06d6a0;
     }
     .simpleNode{
         background-color: white;

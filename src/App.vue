@@ -1,18 +1,26 @@
 <template>
   <div id="app">
-      <appHeader></appHeader>
-      <appGrid></appGrid>
+      <appHeader @algorithmeSelected='selectedAlgorithme = $event'></appHeader>
+      <info :selectedAlgorithme="selectedAlgorithme"></info>
+      <appGrid :selectedAlgorithme="selectedAlgorithme"></appGrid>
   </div>
 </template>
 
 <script>
 import appHeader from './components/header'
-import appGrid from './components/Grid'
+import appGrid from './components/grid'
+import info from './components/info'
 export default {
   name: 'App',
   components: {
    appHeader,
-   appGrid
+   appGrid,
+   info
+  },
+  data: () => {
+    return{
+      selectedAlgorithme: ''
+    }
   }
 }
 </script>
