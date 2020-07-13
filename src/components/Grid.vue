@@ -1,27 +1,30 @@
 <template>
-  <div class="m-2 .table-responsive">
-      <table class="table table-bordered">
-        <tr v-for="(row, rowIndex) in gridMatrix" :key="rowIndex">
-            <td  
-            class="border-primary" 
-            v-for="(line, lineIndex) in row" :key="lineIndex"
-            @mouseover="changeNodePosition(rowIndex,lineIndex)"
-            @mousedown.prevent="mouseDown(rowIndex,lineIndex)"
-            @mouseup="mouseUp()"
-            @mouseenter="changeNodePosition(rowIndex,lineIndex)"
-            @mouseleave="cleareNodePosition(rowIndex,lineIndex)"></td>
-        </tr>
-      </table>
-  </div>
+  <div class="card m-2">
+      <div class="table-responsive">
+          <table class="table">
+                <tr v-for="(row, rowIndex) in gridMatrix" :key="rowIndex">          
+                    <td  
+                    v-for="(col, colIndex) in row" :key="colIndex"
+                    :class="{
+                        startNode: col.type === 'startNode' || col.type === 'tmp_startNode', 
+                        targetNode: col.type === 'targetNode' | col.type === 'tmp_targetNode', 
+                        wallNode: col.type === 'wallNode'}" 
+                    @mousedown.prevent="mouseDown(rowIndex,colIndex)"
+                    @mouseup="mouseUp()"
+                    @mouseenter="changeNodePosition(rowIndex,colIndex)"
+                    @mouseleave="cleareNodePosition(rowIndex,colIndex)"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </template>
-
 <script>
 
 export default {
     data: () => {
         return{
-            startNodePosition: new Array(2),
-            targetNodePosition: new Array(2),
+            startNodePosition: {x:null, y:null},
+            targetNodePosition: { x: null, y: null},
             changingStartNodePosition: false,
             changingTargetNodePosition: false,
             gridMatrix: [],
@@ -32,64 +35,97 @@ export default {
     },
     methods: {
         calculateDocDimens(){
-            this.cols = Math.floor((document.documentElement.clientWidth / 25 ));
+            this.cols = Math.floor((document.documentElement.clientWidth / 26 ));
             this.rows = Math.floor((document.documentElement.clientHeight / 28 ));
         },
         cereateGridMatrix(){
             for(let row = 0; row < this.rows; row++){
                 this.gridMatrix[row] = new Array(this.cols);
             }
-        },
-        drawRandomMarkers(){
-            this.startNodePosition[0] = (Math.floor(Math.random() * this.cols));
-            this.startNodePosition[1] = (Math.floor(Math.random() * this.rows));
-            this.targetNodePosition[0] = (Math.floor(Math.random() * this.cols));
-            this.targetNodePosition[1] = (Math.floor(Math.random() * this.rows));
-
-            let startNodeIndex = ((this.startNodePosition[1] * this.cols) + this.startNodePosition[0]); 
-            document.getElementsByTagName('td')[startNodeIndex].style.backgroundColor = 'red'
-
-            let targetNodeIndex = ((this.targetNodePosition[1] * this.cols) + this.targetNodePosition[0]); 
-            document.getElementsByTagName('td')[targetNodeIndex].style.backgroundColor = 'blue'
-
-        },
-        changeNodePosition(r,l){
-            if(this.changingStartNodePosition || this.changingTargetNodePosition){
-                if(this.changingStartNodePosition){
-                    if(this.isMouseDown){
-                    let currentNodeIndex = ((this.cols * r) + l);                
-                    let currentNode = document.getElementsByTagName('td')[currentNodeIndex];
-                    currentNode.style.backgroundColor = 'red'
-                    this.startNodePosition[1] = r;
-                    this.startNodePosition[0] = l;
+            for(let row = 0; row < this.rows; row++){
+                   for(let col = 0; col < this.cols; col++){
+                    this.gridMatrix[row][col] = {type:''};
                 }
+            }
+        },
+        generateRandomMarkers(){
+            this.startNodePosition.x = (Math.floor(Math.random() * this.cols));
+            this.startNodePosition.y = (Math.floor(Math.random() * this.rows));
+            this.targetNodePosition.x = (Math.floor(Math.random() * this.cols));
+            this.targetNodePosition.y = (Math.floor(Math.random() * this.rows));
+            this.gridMatrix[this.startNodePosition.y][this.startNodePosition.x] = {type: 'startNode'} 
+            this.gridMatrix[this.targetNodePosition.y][this.targetNodePosition.x] = {type: 'targetNode'}
+
+        },
+        changeNodePosition(row,col){
+            if(this.isMouseDown){
+                if(this.changingStartNodePosition || this.changingTargetNodePosition){                
+                    if(this.changingStartNodePosition){                      
+                        if(!(col === this.targetNodePosition.x && row === this.targetNodePosition.y)){
+                            //let currentNodeIndex = ((this.cols * r) + l);                
+                            this.startNodePosition.y = row;
+                            this.startNodePosition.x = col;
+                            if(this.isWallNode({col,row})){
+                                this.gridMatrix[this.startNodePosition.y][this.startNodePosition.x] = {type: 'tmp_startNode'} 
+                            }else{
+                                this.gridMatrix[this.startNodePosition.y][this.startNodePosition.x] = {type: 'startNode'} 
+                            }
+                            
+                        }else{
+                            return
+                        }             
+                    }else{
+                        if(!(col === this.startNodePosition.x && row === this.startNodePosition.y)){
+                            //let currentNodeIndex = ((this.cols * r) + l);                
+                            this.targetNodePosition.y = row;
+                            this.targetNodePosition.x = col;
+                            if(this.isWallNode({col,row})){
+                                this.gridMatrix[this.targetNodePosition.y][this.targetNodePosition.x] = {type: 'tmp_targetNode'}
+                            }else{
+                                this.gridMatrix[this.targetNodePosition.y][this.targetNodePosition.x] = {type: 'targetNode'} 
+                            }
+                            
+                        }else{
+                            return
+                        }       
+                    }
                 }else{
-                    if(this.isMouseDown){
-                    let currentNodeIndex = ((this.cols * r) + l);                
-                    let currentNode = document.getElementsByTagName('td')[currentNodeIndex];
-                    currentNode.style.backgroundColor = 'blue'
-                    this.targetNodePosition[1] = r;
-                    this.targetNodePosition[0] = l;
+                    if((col === this.targetNodePosition.x && row === this.targetNodePosition.y) || (col === this.startNodePosition.x && row === this.startNodePosition.y)){
+                        return
+                    }
+                    //let currentNodeIndex = ((this.cols * r) + l);                
+                    this.gridMatrix[row][col] = {type: 'wallNode'} 
                 }
-
-            }
+                this.$forceUpdate();
             }
         },
-        cleareNodePosition(r,l){
+        cleareNodePosition(row,col){
             if(this.changingStartNodePosition || this.changingTargetNodePosition){
                 if(this.isMouseDown){
-                    let currentNodeIndex = ((this.cols * r) + l);           
-                    let currentNode = document.getElementsByTagName('td')[currentNodeIndex];
-                    currentNode.style.backgroundColor = 'white'
+                    if(this.changingStartNodePosition ){
+                         if(col === this.targetNodePosition.x && row === this.targetNodePosition.y){
+                            return
+                        }
+                    }else{
+                        if(col === this.startNodePosition.x && row === this.startNodePosition.y){
+                            return
+                        }
+                    }             
+                   // let currentNodeIndex = ((this.cols * r) + l);           
+                    if(this.gridMatrix[row][col].type === 'tmp_startNode' || this.gridMatrix[row][col].type === 'tmp_targetNode'){
+                       this.gridMatrix[row][col] = {type: 'wallNode'} 
+                    }else{
+                        this.gridMatrix[row][col] = {type: ''} 
+                    }
                 }
             }
         },
         mouseDown(r,l){
             this.isMouseDown = true
-            if(l === this.targetNodePosition[0] && r === this.targetNodePosition[1]){
+            if(l === this.targetNodePosition.x && r === this.targetNodePosition.y){
                 this.changingTargetNodePosition = true;
                 this.changingStartNodePosition = false;
-            }else if(l === this.startNodePosition[0] && r === this.startNodePosition[1]){
+            }else if(l === this.startNodePosition.x && r === this.startNodePosition.y){
                 this.changingStartNodePosition = true;
                 this.changingTargetNodePosition = false;
             }else{
@@ -98,25 +134,40 @@ export default {
             }
         },
         mouseUp(){
-            this.isMouseDown = true
+            this.isMouseDown = false;
             this.changingStartNodePosition = false;
             this.changingTargetNodePosition = false;
+        },
+        isWallNode(node){
+           return this.gridMatrix[node.row][node.col].type === 'wallNode';
         }
     },
 
     created(){
         this.calculateDocDimens();
-    },
-    beforeMount(){
         this.cereateGridMatrix();
-    },
-    mounted(){     
-        this.$nextTick(function () {
-            this.drawRandomMarkers();
-        })
+        this.generateRandomMarkers();
     },
 }
 </script>
 
 <style>
+    td{
+       border: 1px solid #bdd5ea;
+    }
+    .table{
+        margin-bottom: 0px;
+    }
+    .startNode{
+        background-color: blue;
+    }
+    .targetNode{
+        background-color: green;
+    }
+    .wallNode{
+        background-color: #003049;
+    }
+    .simpleNode{
+        background-color: white;
+    }
 </style>
