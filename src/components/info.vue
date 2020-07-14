@@ -1,14 +1,19 @@
 <template>
   <div class="card m-2 p-3">
       <h4>visualizing: {{selectedAlgorithme}}</h4>
-      <button type="button" class="btn myBtn">Start</button>
+      <button @click="startVisualization()" type="button" class="btn myBtn">Start</button>
   </div>
 </template>
 
 <script>
 
 export default {
-  props: ['selectedAlgorithme']
+  props: ['selectedAlgorithme'],
+  methods:{
+    startVisualization(){
+      this.$emit('startVisualization');
+    }
+  }
 }
 </script>
 

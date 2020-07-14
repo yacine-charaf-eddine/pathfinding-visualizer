@@ -1,8 +1,11 @@
 <template>
   <div id="app">
       <appHeader @algorithmeSelected='selectedAlgorithme = $event'></appHeader>
-      <info :selectedAlgorithme="selectedAlgorithme"></info>
-      <appGrid :selectedAlgorithme="selectedAlgorithme"></appGrid>
+      <info :selectedAlgorithme="selectedAlgorithme" @startVisualization="startVisualization = true"></info>
+      <appGrid :startVisualisation="{
+        selectedAlgorithme: selectedAlgorithme,
+        startVisualization: startVisualization
+        }"></appGrid>
   </div>
 </template>
 
@@ -19,7 +22,8 @@ export default {
   },
   data: () => {
     return{
-      selectedAlgorithme: ''
+      selectedAlgorithme: '',
+      startVisualization: false
     }
   }
 }
