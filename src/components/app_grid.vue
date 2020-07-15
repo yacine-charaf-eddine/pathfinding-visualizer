@@ -12,7 +12,9 @@
                         wallNode: col.type === 'wallNode',
                         'node-path': col.type ==='node-path',
                         'start-node': col.type ==='start-node',
+                        'tmp-start-node': col.type ==='tmp-start-node',
                         'start-node-path': col.type ==='start-node-path',
+                        'tmp-start-node-path': col.type ==='tmp-start-node-path',
                         path: col.type ==='path',
                         'target-node': col.type ==='target-node'}"
             @mousedown.prevent="mouseDown(rowIndex,colIndex)"
@@ -33,7 +35,7 @@ export default {
   },
   data: () => {
     return {
-      startNodePosition: { col: null, rox: null },
+      startNodePosition: { col: null, row: null },
       targetNodePosition: { col: null, row: null },
       changingStartNodePosition: false,
       changingTargetNodePosition: false,
@@ -50,8 +52,19 @@ export default {
           switch (newVal.selectedAlgorithme) {
             case "Dijkstra's Algorithm": {
               this.runDijkstra();
+              this.$emit("visualisationIsDone");
             }
           }
+        }
+        if (newVal.clearWalls === true) {
+          this.clear(true, false);
+          this.$forceUpdate();
+          this.$emit("wallsCleaned");
+        }
+        if (newVal.clearPath === true) {
+          this.clear(false, true);
+          this.$forceUpdate();
+          this.$emit("pathCleaned");
         }
       }
     }
@@ -59,7 +72,7 @@ export default {
   methods: {
     calculateDocDimens() {
       this.cols = Math.floor(document.documentElement.clientWidth / 27);
-      this.rows = Math.floor(document.documentElement.clientHeight / 35);
+      this.rows = Math.floor(document.documentElement.clientHeight / 37);
     },
     cereateGridMatrix() {
       for (let row = 0; row < this.rows; row++) {
@@ -117,6 +130,7 @@ export default {
               this.startNodePosition.row = row;
               this.startNodePosition.col = col;
               if (this.isWallNode({ col, row })) {
+                console.log(this.isWallNode({ col, row }));
                 this.gridMatrix[this.startNodePosition.row][
                   this.startNodePosition.col
                 ].type = "tmp_startNode";
@@ -220,6 +234,43 @@ export default {
     isWallNode(node) {
       return this.gridMatrix[node.row][node.col].type === "wallNode";
     },
+    clear(isWall, isPath) {
+      if (isWall) {
+        for (let row = 0; row < this.gridMatrix.length; row++) {
+          for (let col = 0; col < this.gridMatrix[row].length; col++) {
+            if (this.gridMatrix[row][col].type === "wallNode") {
+              this.gridMatrix[row][col].type = "";
+            }
+          }
+        }
+      } else if (isPath) {
+        for (let row = 0; row < this.gridMatrix.length; row++) {
+          for (let col = 0; col < this.gridMatrix[row].length; col++) {
+            if (
+              this.gridMatrix[row][col].type === "target-node" ||
+              this.gridMatrix[row][col].type === "targetNode"
+            ) {
+              this.gridMatrix[row][col].type = "targetNode";
+            } else if (
+              this.gridMatrix[row][col].type === "start-node-path" ||
+              this.gridMatrix[row][col].type === "startNode"
+            ) {
+              this.gridMatrix[row][col].type = "startNode";
+            } else if (this.gridMatrix[row][col].type === "wallNode") {
+              continue;
+            } else if (
+              this.gridMatrix[row][col].type === "tmp-start-node-path"
+            ) {
+              this.gridMatrix[row][col].type = "tmp_startNode";
+            } else if (this.gridMatrix[row][col].type === "tmp_startNode") {
+              continue;
+            } else {
+              this.gridMatrix[row][col].type = "";
+            }
+          }
+        }
+      }
+    },
     runDijkstra() {
       let startNode = this.gridMatrix[this.startNodePosition.row][
         this.startNodePosition.col
@@ -239,7 +290,15 @@ export default {
       for (let i = 0; i < nodes.length - 1; i++) {
         setTimeout(() => {
           if (i === 0) {
-            this.gridMatrix[nodes[i].row][nodes[i].col].type = "start-node";
+            if (
+              this.gridMatrix[nodes[i].row][nodes[i].col].type ===
+              "tmp_startNode"
+            ) {
+              this.gridMatrix[nodes[i].row][nodes[i].col].type =
+                "tmp-start-node";
+            } else {
+              this.gridMatrix[nodes[i].row][nodes[i].col].type = "start-node";
+            }
           } else {
             this.gridMatrix[nodes[i].row][nodes[i].col].type = "node-path";
           }
@@ -251,8 +310,16 @@ export default {
                   this.gridMatrix[path[i].row][path[i].col].type =
                     "target-node";
                 } else if (i === 0) {
-                  this.gridMatrix[path[i].row][path[i].col].type =
-                    "start-node-path";
+                  if (
+                    this.gridMatrix[path[i].row][path[i].col].type ===
+                    "tmp-start-node"
+                  ) {
+                    this.gridMatrix[path[i].row][path[i].col].type =
+                      "tmp-start-node-path";
+                  } else {
+                    this.gridMatrix[path[i].row][path[i].col].type =
+                      "start-node-path";
+                  }
                 } else {
                   this.gridMatrix[path[i].row][path[i].col].type = "path";
                 }
@@ -260,7 +327,7 @@ export default {
               }, i * 50);
             }
           }
-        }, i * 20);
+        }, i * 30);
       }
     }
   },
@@ -297,6 +364,17 @@ td {
   background-color: white;
 }
 .start-node {
+  animation-name: startNode;
+  animation-duration: 1s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+.tmp-start-node {
   animation-name: startNode;
   animation-duration: 1s;
   animation-timing-function: ease-out;
@@ -423,6 +501,17 @@ td {
   }
 }
 .start-node-path {
+  animation-name: StartNodePath;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+.tmp-start-node-path {
   animation-name: StartNodePath;
   animation-duration: 0.5s;
   animation-timing-function: ease-out;
