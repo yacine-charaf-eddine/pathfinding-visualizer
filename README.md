@@ -1,4 +1,5 @@
 # pathfinder-visualizer
+https://yacine-charaf-eddine.github.io/pathfinding-visualizer/
 
 ## Project setup
 ```
