@@ -48,7 +48,7 @@
               data-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
-            >Speed: {{speed}}</button>
+            >Speed: {{speed.name}}</button>
             <div class="dropdown-menu mt-2 p-2" aria-labelledby="navbarDropdown">
               <button
                 @click="selectedSpeed(speedItem)"
@@ -95,7 +95,11 @@ export default {
       speedList: ["fast", "medium", "slow"],
       algorithme: null,
       maze: null,
-      speed: "medium"
+      speed: {
+        name: "medium",
+        nodesSpeed: 30,
+        pathSpeed: 50
+      }
     };
   },
   methods: {
@@ -108,7 +112,17 @@ export default {
       this.$emit("mazeSelected", this.maze);
     },
     selectedSpeed(speed) {
-      this.speed = speed;
+      this.speed.name = speed;
+      if (speed === "medium") {
+        this.speed.nodesSpeed = 30;
+        this.speed.pathSpeed = 50;
+      } else if (speed === "fast") {
+        this.speed.nodesSpeed = 15;
+        this.speed.pathSpeed = 25;
+      } else {
+        this.speed.nodesSpeed = 45;
+        this.speed.pathSpeed = 75;
+      }
       this.$emit("speedSelected", this.speed);
     },
     startVisualization() {

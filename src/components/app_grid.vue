@@ -11,12 +11,15 @@
                         targetNode: col.type === 'targetNode' | col.type === 'tmp_targetNode', 
                         wallNode: col.type === 'wallNode',
                         'node-path': col.type ==='node-path',
-                        'start-node': col.type ==='start-node',
-                        'tmp-start-node': col.type ==='tmp-start-node',
-                        'start-node-path': col.type ==='start-node-path',
-                        'tmp-start-node-path': col.type ==='tmp-start-node-path',
-                        path: col.type ==='path',
-                        'target-node': col.type ==='target-node'}"
+                        'node--path': col.type ==='node--path',
+                        'start-node': col.type ==='start-node' || col.type ==='tmp-start-node',
+                        'start--node': col.type ==='start--node' || col.type ==='tmp-start--node',
+                        'start-node-path': col.type ==='start-node-path' || col.type ==='tmp-start-node-path',
+                        'start-node--path': col.type ==='start-node--path' || col.type ==='tmp-start-node--path',
+                        'target-node': col.type ==='target-node' || col.type ==='tmp-target-node',
+                        'target--node': col.type ==='target--node' || col.type ==='tmp-target--node',
+                         path: col.type ==='path',
+                        '-path': col.type ==='-path'}"
             @mousedown.prevent="mouseDown(rowIndex,colIndex)"
             @mouseup="mouseUp()"
             @mouseenter="changeNodePosition(rowIndex,colIndex)"
@@ -28,7 +31,13 @@
   </div>
 </template>
 <script>
-import { dijkstra, getNodesInShortestPathOrder } from "../algorithmes/Dijkstra";
+import {
+  dijkstra,
+  getNodesInShortestPathOrder
+} from "../algorithmes/pathfinding/Dijkstra";
+
+import { recursiveDivision } from "../algorithmes/mazes/Recursive_division";
+
 export default {
   props: {
     startVisualisation: Object
@@ -42,17 +51,24 @@ export default {
       gridMatrix: [],
       cols: null,
       rows: null,
-      isMouseDown: false
+      isMouseDown: false,
+      isSynced: false,
+      stats: {
+        time: null,
+        visitedNodes: null,
+        pathNodes: null
+      }
     };
   },
   watch: {
     startVisualisation: {
       handler(newVal) {
         if (newVal.startVisualization === true) {
+          this.clear(false, true);
+          this.$forceUpdate();
           switch (newVal.selectedAlgorithme) {
             case "Dijkstra's Algorithm": {
               this.runDijkstra();
-              this.$emit("visualisationIsDone");
             }
           }
         }
@@ -65,6 +81,7 @@ export default {
           this.clear(false, true);
           this.$forceUpdate();
           this.$emit("pathCleaned");
+          this.isSynced = false;
         }
       }
     }
@@ -130,7 +147,6 @@ export default {
               this.startNodePosition.row = row;
               this.startNodePosition.col = col;
               if (this.isWallNode({ col, row })) {
-                console.log(this.isWallNode({ col, row }));
                 this.gridMatrix[this.startNodePosition.row][
                   this.startNodePosition.col
                 ].type = "tmp_startNode";
@@ -175,6 +191,33 @@ export default {
           }
           this.gridMatrix[row][col].type = "wallNode";
         }
+        if (this.isSynced) {
+          let gridMatrixClone = this.cloneMatrix(this.gridMatrix);
+          let startNode =
+            gridMatrixClone[this.startNodePosition.row][
+              this.startNodePosition.col
+            ];
+          let targetNode =
+            gridMatrixClone[this.targetNodePosition.row][
+              this.targetNodePosition.col
+            ];
+          let start = performance.now();
+          let visitedNodesInOrder = dijkstra(
+            gridMatrixClone,
+            startNode,
+            targetNode
+          );
+
+          let path = getNodesInShortestPathOrder(targetNode);
+          let end = performance.now();
+          this.stats.time = Math.floor(end - start);
+          this.stats.visitedNodes = visitedNodesInOrder.length;
+          this.stats.pathNodes = path.length;
+          this.$emit("executionStats", this.stats);
+          this.clear(false, true);
+          this.$forceUpdate();
+          this.doNotAnimate(visitedNodesInOrder, path);
+        }
         this.$forceUpdate();
       }
     },
@@ -207,23 +250,70 @@ export default {
         }
       }
     },
+    doNotAnimate(nodes, path) {
+      for (let i = 0; i < nodes.length - 1; i++) {
+        if (i === 0) {
+          if (
+            this.gridMatrix[nodes[i].row][nodes[i].col].type === "tmp_startNode"
+          ) {
+            this.gridMatrix[nodes[i].row][nodes[i].col].type =
+              "tmp-start--node";
+          } else {
+            this.gridMatrix[nodes[i].row][nodes[i].col].type = "start--node";
+          }
+        } else {
+          this.gridMatrix[nodes[i].row][nodes[i].col].type = "node--path";
+        }
+        if (i === nodes.length - 2) {
+          for (let i = 0; i < path.length; i++) {
+            if (i === path.length - 1) {
+              if (
+                this.gridMatrix[path[i].row][path[i].col].type ===
+                "tmp_targetNode"
+              ) {
+                this.gridMatrix[path[i].row][path[i].col].type =
+                  "tmp-target--node";
+              } else {
+                this.gridMatrix[path[i].row][path[i].col].type = "target--node";
+              }
+            } else if (i === 0) {
+              if (
+                this.gridMatrix[path[i].row][path[i].col].type ===
+                "tmp-start-node"
+              ) {
+                this.gridMatrix[path[i].row][path[i].col].type =
+                  "tmp-start-node--path";
+              } else {
+                this.gridMatrix[path[i].row][path[i].col].type =
+                  "start-node--path";
+              }
+            } else {
+              this.gridMatrix[path[i].row][path[i].col].type = "-path";
+            }
+          }
+        }
+      }
+      this.$forceUpdate();
+    },
     mouseDown(r, l) {
-      this.isMouseDown = true;
-      if (
-        l === this.targetNodePosition.col &&
-        r === this.targetNodePosition.row
-      ) {
-        this.changingTargetNodePosition = true;
-        this.changingStartNodePosition = false;
-      } else if (
-        l === this.startNodePosition.col &&
-        r === this.startNodePosition.row
-      ) {
-        this.changingStartNodePosition = true;
-        this.changingTargetNodePosition = false;
-      } else {
-        this.changingStartNodePosition = false;
-        this.changingTargetNodePosition = false;
+      if (!this.startVisualisation.startVisualization) {
+        this.isMouseDown = true;
+        if (
+          l === this.targetNodePosition.col &&
+          r === this.targetNodePosition.row
+        ) {
+          this.changingTargetNodePosition = true;
+          this.changingStartNodePosition = false;
+        } else if (
+          l === this.startNodePosition.col &&
+          r === this.startNodePosition.row
+        ) {
+          this.changingStartNodePosition = true;
+          this.changingTargetNodePosition = false;
+        } else {
+          this.changingStartNodePosition = false;
+          this.changingTargetNodePosition = false;
+        }
       }
     },
     mouseUp() {
@@ -248,22 +338,27 @@ export default {
           for (let col = 0; col < this.gridMatrix[row].length; col++) {
             if (
               this.gridMatrix[row][col].type === "target-node" ||
+              this.gridMatrix[row][col].type === "target--node" ||
               this.gridMatrix[row][col].type === "targetNode"
             ) {
               this.gridMatrix[row][col].type = "targetNode";
             } else if (
               this.gridMatrix[row][col].type === "start-node-path" ||
+              this.gridMatrix[row][col].type === "start-node--path" ||
               this.gridMatrix[row][col].type === "startNode"
             ) {
               this.gridMatrix[row][col].type = "startNode";
             } else if (this.gridMatrix[row][col].type === "wallNode") {
               continue;
             } else if (
-              this.gridMatrix[row][col].type === "tmp-start-node-path"
+              this.gridMatrix[row][col].type === "tmp-start-node-path" ||
+              this.gridMatrix[row][col].type === "tmp-start-node--path"
             ) {
               this.gridMatrix[row][col].type = "tmp_startNode";
             } else if (this.gridMatrix[row][col].type === "tmp_startNode") {
               continue;
+            } else if (this.gridMatrix[row][col].type === "tmp-target-node") {
+              this.gridMatrix[row][col].type = "tmp_targetNode";
             } else {
               this.gridMatrix[row][col].type = "";
             }
@@ -271,20 +366,46 @@ export default {
         }
       }
     },
+    generateMaze() {
+      let nodes = recursiveDivision(this.gridMatrix);
+      for (let i = 0; i < nodes.length; i++) {
+        setTimeout(() => {
+          nodes[i].type = "wallNode";
+          this.$forceUpdate();
+        }, 20 * i);
+      }
+    },
     runDijkstra() {
-      let startNode = this.gridMatrix[this.startNodePosition.row][
-        this.startNodePosition.col
-      ];
-      let targetNode = this.gridMatrix[this.targetNodePosition.row][
-        this.targetNodePosition.col
-      ];
+      let gridMatrixClone = this.cloneMatrix(this.gridMatrix);
+      let startNode =
+        gridMatrixClone[this.startNodePosition.row][this.startNodePosition.col];
+      let targetNode =
+        gridMatrixClone[this.targetNodePosition.row][
+          this.targetNodePosition.col
+        ];
+
+      let start = performance.now();
       let visitedNodesInOrder = dijkstra(
-        this.gridMatrix,
+        gridMatrixClone,
         startNode,
         targetNode
       );
       let path = getNodesInShortestPathOrder(targetNode);
+      let end = performance.now();
+      this.stats.time = Math.floor(end - start);
+      this.stats.visitedNodes = visitedNodesInOrder.length;
+      this.stats.pathNodes = path.length;
       this.animate(visitedNodesInOrder, path);
+    },
+    cloneMatrix(matrix) {
+      let matrixClone = [];
+      for (let row = 0; row < matrix.length; row++) {
+        matrixClone[row] = [];
+        for (let col = 0; col < matrix[row].length; col++) {
+          matrixClone[row][col] = { ...matrix[row][col] };
+        }
+      }
+      return matrixClone;
     },
     animate(nodes, path) {
       for (let i = 0; i < nodes.length - 1; i++) {
@@ -305,10 +426,23 @@ export default {
           this.$forceUpdate();
           if (i === nodes.length - 2) {
             for (let i = 0; i < path.length; i++) {
+              if (i === path.length - 1) {
+                this.$emit("visualisationIsDone");
+                this.$emit("executionStats", this.stats);
+                this.isSynced = true;
+              }
               setTimeout(() => {
                 if (i === path.length - 1) {
-                  this.gridMatrix[path[i].row][path[i].col].type =
-                    "target-node";
+                  if (
+                    this.gridMatrix[path[i].row][path[i].col].type ===
+                    "tmp_targetNode"
+                  ) {
+                    this.gridMatrix[path[i].row][path[i].col].type =
+                      "tmp-target-node";
+                  } else {
+                    this.gridMatrix[path[i].row][path[i].col].type =
+                      "target-node";
+                  }
                 } else if (i === 0) {
                   if (
                     this.gridMatrix[path[i].row][path[i].col].type ===
@@ -324,10 +458,10 @@ export default {
                   this.gridMatrix[path[i].row][path[i].col].type = "path";
                 }
                 this.$forceUpdate();
-              }, i * 50);
+              }, i * this.startVisualisation.speed.pathSpeed);
             }
           }
-        }, i * 30);
+        }, i * this.startVisualisation.speed.nodesSpeed);
       }
     }
   },
@@ -348,24 +482,8 @@ td {
   margin-bottom: 0px;
 }
 .startNode {
-  background-image: url("../assets/location_marker.svg");
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.targetNode {
-  background-image: url("../assets/target_marker.svg");
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.wallNode {
-  background-color: #011627;
-}
-.simpleNode {
-  background-color: white;
-}
-.start-node {
-  animation-name: startNode;
-  animation-duration: 1s;
+  animation-name: start-node;
+  animation-duration: 0.3s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
@@ -373,8 +491,77 @@ td {
   animation-fill-mode: forwards;
   animation-play-state: running;
 }
+@keyframes start-node {
+  0% {
+    transform: scale(0.4);
+    background-image: url("../assets/location_marker.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+  }
 
-.tmp-start-node {
+  100% {
+    transform: scale(1);
+    background-image: url("../assets/location_marker.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+}
+.targetNode {
+  animation-name: target-node;
+  animation-duration: 0.3s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+@keyframes target-node {
+  0% {
+    transform: scale(0.4);
+    background-image: url("../assets/target_marker.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  100% {
+    transform: scale(1);
+    background-image: url("../assets/target_marker.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+}
+.wallNode {
+  animation-name: wallNode;
+  animation-duration: 0.3s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+.simpleNode {
+  background-color: white;
+}
+@keyframes wallNode {
+  0% {
+    transform: scale(0.6);
+    background-color: #011627;
+  }
+  100% {
+    transform: scale(1);
+    background-color: #011627;
+  }
+}
+.start--node {
+  background-color: rgba(0, 190, 218, 0.75);
+  background-image: url("../assets/location_marker.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.start-node {
   animation-name: startNode;
   animation-duration: 1s;
   animation-timing-function: ease-out;
@@ -418,6 +605,9 @@ td {
     background-repeat: no-repeat;
   }
 }
+.node--path {
+  background-color: rgba(0, 190, 218, 0.75);
+}
 .node-path {
   animation-name: nodePath;
   animation-duration: 1s;
@@ -450,6 +640,9 @@ td {
     background-color: rgba(0, 190, 218, 0.75);
   }
 }
+.-path {
+  background-color: #ffff3f;
+}
 .path {
   animation-name: path;
   animation-duration: 1s;
@@ -472,9 +665,15 @@ td {
     background-color: #ffff3f;
   }
 }
+.target--node {
+  background-color: #ffff3f;
+  background-image: url("../assets/target_marker.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .target-node {
   animation-name: targetNode;
-  animation-duration: 0.5s;
+  animation-duration: 1s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
@@ -482,7 +681,6 @@ td {
   animation-fill-mode: forwards;
   animation-play-state: running;
 }
-
 @keyframes targetNode {
   0% {
     transform: scale(0.6);
@@ -500,9 +698,15 @@ td {
     background-repeat: no-repeat;
   }
 }
+.start-node--path {
+  background-color: #ffff3f;
+  background-image: url("../assets/location_marker.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .start-node-path {
   animation-name: StartNodePath;
-  animation-duration: 0.5s;
+  animation-duration: 1s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
@@ -510,18 +714,6 @@ td {
   animation-fill-mode: forwards;
   animation-play-state: running;
 }
-
-.tmp-start-node-path {
-  animation-name: StartNodePath;
-  animation-duration: 0.5s;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
-}
-
 @keyframes StartNodePath {
   0% {
     transform: scale(0.6);

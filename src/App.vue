@@ -1,24 +1,36 @@
 <template>
   <div id="app">
-    <app-header
-      @algorithmeSelected="selectedAlgorithme = $event"
-      @startVisualization="startVisualization = true"
-      @clearWalls="clearWalls = true"
-      @clearPath="clearPath = true"
-    ></app-header>
-    <app-info :selectedAlgorithme="selectedAlgorithme"></app-info>
-    <appGrid
-      :startVisualisation="{
+    <transition appear enter-active-class="animate__animated animate__fadeInDown">
+      <app-header
+        @algorithmeSelected="selectedAlgorithme = $event"
+        @startVisualization="startVisualization = true"
+        @clearWalls="clearWalls = true"
+        @clearPath="clearPath = true"
+        @speedSelected="speed = $event"
+      ></app-header>
+    </transition>
+    <transition appear enter-active-class="animate__animated animate__fadeInRight">
+      <app-footer></app-footer>
+    </transition>
+
+    <transition appear enter-active-class="animate__animated animate__fadeIn">
+      <appGrid
+        :startVisualisation="{
         selectedAlgorithme: selectedAlgorithme,
         startVisualization: startVisualization,
         clearWalls: clearWalls,
-        clearPath: clearPath
+        clearPath: clearPath,
+        speed: speed
         }"
-      @visualisationIsDone="startVisualization = false"
-      @wallsCleaned="clearWalls = false"
-      @pathCleaned="clearPath = false"
-    ></appGrid>
-    <app-footer></app-footer>
+        @visualisationIsDone="startVisualization = false"
+        @wallsCleaned="clearWalls = false"
+        @pathCleaned="clearPath = false"
+        @executionStats="stats = $event"
+      ></appGrid>
+    </transition>
+    <transition mode="in-out" enter-active-class="animate__animated animate__zoomIn">
+      <app-info :selectedAlgorithme="selectedAlgorithme" :stats="stats" v-if="stats.time !== null"></app-info>
+    </transition>
   </div>
 </template>
 
@@ -40,7 +52,17 @@ export default {
       selectedAlgorithme: "",
       startVisualization: false,
       clearWalls: false,
-      clearPath: false
+      clearPath: false,
+      speed: {
+        name: "medium",
+        nodesSpeed: 30,
+        pathSpeed: 50
+      },
+      stats: {
+        time: null,
+        visitedNodes: null,
+        pathNodes: null
+      }
     };
   }
 };

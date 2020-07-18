@@ -44,7 +44,7 @@
 <script>
 </script>
 
-<style>
+<style scoped>
 .start {
   width: 25px;
   height: 25px;
