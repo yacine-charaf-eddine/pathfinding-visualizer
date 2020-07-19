@@ -7,6 +7,7 @@
           <li class="dropdown">
             <button
               class="btn btn-lg dropdown-toggle"
+              :class="{disabled: visualizing}"
               type="button"
               id="navbarDropdown"
               data-toggle="dropdown"
@@ -24,6 +25,7 @@
           </li>
           <li class="dropdown">
             <button
+              :class="{disabled: visualizing}"
               class="btn btn-lg dropdown-toggle"
               type="button"
               id="navbarDropdown"
@@ -43,6 +45,7 @@
           <li class="dropdown">
             <button
               class="btn btn-lg dropdown-toggle"
+              :class="{disabled: visualizing}"
               type="button"
               id="navbarDropdown"
               data-toggle="dropdown"
@@ -67,6 +70,10 @@
               disabled
             >Select an Algorithme</button>
             <button
+              v-else-if="visualizing"
+              class="btn btn-outline-primary btn-block"
+            >Visualizing {{algorithme}}</button>
+            <button
               v-else
               @click="startVisualization()"
               class="btn startBtn btn-block"
@@ -75,10 +82,22 @@
         </ul>
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            <button @click="clearWalls()" class="btn btn-lg navbarBtn">Clear Walls</button>
+            <button
+              v-if="visualizing"
+              @click="clearWalls()"
+              class="btn btn-lg navbarBtn"
+              disabled
+            >Clear Walls</button>
+            <button v-else @click="clearWalls()" class="btn btn-lg navbarBtn">Clear Walls</button>
           </li>
           <li class="nav-item">
-            <button @click="clearPath()" class="btn btn-lg navbarBtn">Clear Path</button>
+            <button
+              v-if="visualizing"
+              @click="clearPath()"
+              class="btn btn-lg navbarBtn"
+              disabled
+            >Clear Path</button>
+            <button v-else @click="clearPath()" class="btn btn-lg navbarBtn">Clear Path</button>
           </li>
         </ul>
       </div>
@@ -88,6 +107,7 @@
 
 <script>
 export default {
+  props: ["visualizing"],
   data: () => {
     return {
       algorithmes: ["Dijkstra's Algorithm", "A* Search"],
@@ -190,5 +210,27 @@ export default {
 .startBtn:hover {
   background-color: #00bbf9;
   color: #fff;
+}
+.btn-outline-primary:focus {
+  box-shadow: none;
+}
+.btn-outline-primary:hover {
+  box-shadow: none;
+  color: #00a8e8;
+  background-color: white;
+  border: 1px solid #00a8e8;
+}
+.btn-outline-primary:not(:disabled):not(.disabled):focus:active {
+  box-shadow: none;
+}
+.btn-outline-primary:not(:disabled):not(.disabled):active {
+  color: #00a8e8;
+  background-color: white;
+  border: 1px solid #00a8e8;
+}
+.btn-outline-primary {
+  color: #00a8e8;
+  background-color: white;
+  border: 1px solid #00a8e8;
 }
 </style>

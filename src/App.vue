@@ -2,8 +2,9 @@
   <div id="app">
     <transition appear enter-active-class="animate__animated animate__fadeInDown">
       <app-header
+        :visualizing="visualizating"
         @algorithmeSelected="selectedAlgorithme = $event"
-        @startVisualization="startVisualization = true"
+        @startVisualization="visualizating = true"
         @clearWalls="clearWalls = true"
         @clearPath="clearPath = true"
         @speedSelected="speed = $event"
@@ -17,12 +18,12 @@
       <appGrid
         :startVisualisation="{
         selectedAlgorithme: selectedAlgorithme,
-        startVisualization: startVisualization,
+        visualizating: visualizating,
         clearWalls: clearWalls,
         clearPath: clearPath,
         speed: speed
         }"
-        @visualisationIsDone="startVisualization = false"
+        @visualisationIsDone="visualizating = false"
         @wallsCleaned="clearWalls = false"
         @pathCleaned="clearPath = false"
         @executionStats="stats = $event"
@@ -50,7 +51,7 @@ export default {
   data: () => {
     return {
       selectedAlgorithme: "",
-      startVisualization: false,
+      visualizating: false,
       clearWalls: false,
       clearPath: false,
       speed: {

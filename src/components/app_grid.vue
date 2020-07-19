@@ -63,7 +63,7 @@ export default {
   watch: {
     startVisualisation: {
       handler(newVal) {
-        if (newVal.startVisualization === true) {
+        if (newVal.visualizating === true) {
           this.clear(false, true);
           this.$forceUpdate();
           switch (newVal.selectedAlgorithme) {
@@ -426,11 +426,6 @@ export default {
           this.$forceUpdate();
           if (i === nodes.length - 2) {
             for (let i = 0; i < path.length; i++) {
-              if (i === path.length - 1) {
-                this.$emit("visualisationIsDone");
-                this.$emit("executionStats", this.stats);
-                this.isSynced = true;
-              }
               setTimeout(() => {
                 if (i === path.length - 1) {
                   if (
@@ -459,6 +454,11 @@ export default {
                 }
                 this.$forceUpdate();
               }, i * this.startVisualisation.speed.pathSpeed);
+              if (i === path.length - 1) {
+                this.$emit("visualisationIsDone");
+                this.$emit("executionStats", this.stats);
+                this.isSynced = true;
+              }
             }
           }
         }, i * this.startVisualisation.speed.nodesSpeed);
