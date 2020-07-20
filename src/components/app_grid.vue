@@ -36,7 +36,7 @@ import {
   getNodesInShortestPathOrder
 } from "../algorithmes/pathfinding/Dijkstra";
 import { a_star } from "../algorithmes/pathfinding/A_star";
-
+import { animate, sync } from "../animation/pathfinding_animation";
 import { recursiveDivision } from "../algorithmes/mazes/Recursive_division";
 
 export default {
@@ -73,7 +73,7 @@ export default {
               break;
             }
             case "A* Search": {
-              this.runA_star();
+              this.run_A_star();
               break;
             }
           }
@@ -228,7 +228,7 @@ export default {
           this.$emit("executionStats", this.stats);
           this.clear(false, true);
           this.$forceUpdate();
-          this.doNotAnimate(visitedNodesInOrder, path);
+          sync(this, visitedNodesInOrder, path);
         }
         this.$forceUpdate();
       }
@@ -261,51 +261,6 @@ export default {
           }
         }
       }
-    },
-    doNotAnimate(nodes, path) {
-      for (let i = 0; i < nodes.length - 1; i++) {
-        if (i === 0) {
-          if (
-            this.gridMatrix[nodes[i].row][nodes[i].col].type === "tmp_startNode"
-          ) {
-            this.gridMatrix[nodes[i].row][nodes[i].col].type =
-              "tmp-start--node";
-          } else {
-            this.gridMatrix[nodes[i].row][nodes[i].col].type = "start--node";
-          }
-        } else {
-          this.gridMatrix[nodes[i].row][nodes[i].col].type = "node--path";
-        }
-        if (i === nodes.length - 2) {
-          for (let i = 0; i < path.length; i++) {
-            if (i === path.length - 1) {
-              if (
-                this.gridMatrix[path[i].row][path[i].col].type ===
-                "tmp_targetNode"
-              ) {
-                this.gridMatrix[path[i].row][path[i].col].type =
-                  "tmp-target--node";
-              } else {
-                this.gridMatrix[path[i].row][path[i].col].type = "target--node";
-              }
-            } else if (i === 0) {
-              if (
-                this.gridMatrix[path[i].row][path[i].col].type ===
-                "tmp-start-node"
-              ) {
-                this.gridMatrix[path[i].row][path[i].col].type =
-                  "tmp-start-node--path";
-              } else {
-                this.gridMatrix[path[i].row][path[i].col].type =
-                  "start-node--path";
-              }
-            } else {
-              this.gridMatrix[path[i].row][path[i].col].type = "-path";
-            }
-          }
-        }
-      }
-      this.$forceUpdate();
     },
     mouseDown(r, l) {
       if (!this.startVisualisation.startVisualization) {
@@ -404,12 +359,10 @@ export default {
       );
       let path = getNodesInShortestPathOrder(targetNode);
       let end = performance.now();
-      this.stats.time = Math.floor(end - start);
-      this.stats.visitedNodes = visitedNodesInOrder.length;
-      this.stats.pathNodes = path.length;
-      this.animate(visitedNodesInOrder, path);
+      this.setStats(start, end, visitedNodesInOrder.length, path.length);
+      animate(this, visitedNodesInOrder, path);
     },
-    runA_star() {
+    run_A_star() {
       let gridMatrixClone = this.cloneMatrix(this.gridMatrix);
       let startNode =
         gridMatrixClone[this.startNodePosition.row][this.startNodePosition.col];
@@ -422,11 +375,14 @@ export default {
       let visitedNodesInOrder = a_star(gridMatrixClone, startNode, targetNode);
       let path = getNodesInShortestPathOrder(targetNode);
       let end = performance.now();
-      this.stats.time = Math.floor(end - start);
-      this.stats.visitedNodes = visitedNodesInOrder.length;
-      this.stats.pathNodes = path.length;
+      this.setStats(start, end, visitedNodesInOrder.length, path.length);
 
-      this.animate(visitedNodesInOrder, path);
+      animate(this, visitedNodesInOrder, path);
+    },
+    setStats(start, end, visitedNodesInOrderLength, pathLength) {
+      this.stats.time = Math.floor(end - start);
+      this.stats.visitedNodes = visitedNodesInOrderLength;
+      this.stats.pathNodes = pathLength;
     },
     cloneMatrix(matrix) {
       let matrixClone = [];
@@ -437,63 +393,6 @@ export default {
         }
       }
       return matrixClone;
-    },
-    animate(nodes, path) {
-      for (let i = 0; i < nodes.length - 1; i++) {
-        setTimeout(() => {
-          if (i === 0) {
-            if (
-              this.gridMatrix[nodes[i].row][nodes[i].col].type ===
-              "tmp_startNode"
-            ) {
-              this.gridMatrix[nodes[i].row][nodes[i].col].type =
-                "tmp-start-node";
-            } else {
-              this.gridMatrix[nodes[i].row][nodes[i].col].type = "start-node";
-            }
-          } else {
-            this.gridMatrix[nodes[i].row][nodes[i].col].type = "node-path";
-          }
-          this.$forceUpdate();
-          if (i === nodes.length - 2) {
-            for (let i = 0; i < path.length; i++) {
-              setTimeout(() => {
-                if (i === path.length - 1) {
-                  if (
-                    this.gridMatrix[path[i].row][path[i].col].type ===
-                    "tmp_targetNode"
-                  ) {
-                    this.gridMatrix[path[i].row][path[i].col].type =
-                      "tmp-target-node";
-                  } else {
-                    this.gridMatrix[path[i].row][path[i].col].type =
-                      "target-node";
-                  }
-                } else if (i === 0) {
-                  if (
-                    this.gridMatrix[path[i].row][path[i].col].type ===
-                    "tmp-start-node"
-                  ) {
-                    this.gridMatrix[path[i].row][path[i].col].type =
-                      "tmp-start-node-path";
-                  } else {
-                    this.gridMatrix[path[i].row][path[i].col].type =
-                      "start-node-path";
-                  }
-                } else {
-                  this.gridMatrix[path[i].row][path[i].col].type = "path";
-                }
-                this.$forceUpdate();
-              }, i * this.startVisualisation.speed.pathSpeed);
-              if (i === path.length - 1) {
-                this.$emit("visualisationIsDone");
-                this.$emit("executionStats", this.stats);
-                this.isSynced = true;
-              }
-            }
-          }
-        }, i * this.startVisualisation.speed.nodesSpeed);
-      }
     }
   },
 

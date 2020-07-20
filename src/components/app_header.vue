@@ -137,11 +137,11 @@ export default {
         this.speed.nodesSpeed = 30;
         this.speed.pathSpeed = 50;
       } else if (speed === "fast") {
-        this.speed.nodesSpeed = 15;
-        this.speed.pathSpeed = 25;
+        this.speed.nodesSpeed = 20;
+        this.speed.pathSpeed = 50;
       } else {
         this.speed.nodesSpeed = 400;
-        this.speed.pathSpeed = 75;
+        this.speed.pathSpeed = 50;
       }
       this.$emit("speedSelected", this.speed);
     },

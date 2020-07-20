@@ -11,7 +11,7 @@
       ></app-header>
     </transition>
     <transition appear enter-active-class="animate__animated animate__fadeInRight">
-      <app-footer></app-footer>
+      <app-Info></app-Info>
     </transition>
 
     <transition appear enter-active-class="animate__animated animate__fadeIn">
@@ -30,7 +30,7 @@
       ></appGrid>
     </transition>
     <transition mode="in-out" enter-active-class="animate__animated animate__zoomIn">
-      <app-info :selectedAlgorithme="selectedAlgorithme" :stats="stats" v-if="stats.time !== null"></app-info>
+      <app-stat :selectedAlgorithme="selectedAlgorithme" :stats="stats" v-if="stats.time !== null"></app-stat>
     </transition>
   </div>
 </template>
@@ -38,15 +38,15 @@
 <script>
 import appHeader from "./components/app_header";
 import appGrid from "./components/app_grid";
+import appStat from "./components/app_stat";
 import appInfo from "./components/app_info";
-import appFooter from "./components/app_footer";
 export default {
   name: "App",
   components: {
     appHeader,
     appGrid,
-    appInfo,
-    appFooter
+    appStat,
+    appInfo
   },
   data: () => {
     return {
