@@ -35,6 +35,7 @@ import {
   dijkstra,
   getNodesInShortestPathOrder
 } from "../algorithmes/pathfinding/Dijkstra";
+import { a_star } from "../algorithmes/pathfinding/A_star";
 
 import { recursiveDivision } from "../algorithmes/mazes/Recursive_division";
 
@@ -69,6 +70,11 @@ export default {
           switch (newVal.selectedAlgorithme) {
             case "Dijkstra's Algorithm": {
               this.runDijkstra();
+              break;
+            }
+            case "A* Search": {
+              this.runA_star();
+              break;
             }
           }
         }
@@ -103,7 +109,9 @@ export default {
             type: "",
             previousParent: null,
             isVisited: false,
-            distance: Infinity
+            distance: Infinity,
+            heuristicDistance: null,
+            totalDistance: Infinity
           };
         }
       }
@@ -121,7 +129,9 @@ export default {
         type: "startNode",
         previousParent: null,
         isVisited: false,
-        distance: Infinity
+        distance: Infinity,
+        heuristicDistance: null,
+        totalDistance: Infinity
       };
       this.gridMatrix[this.targetNodePosition.row][
         this.targetNodePosition.col
@@ -131,7 +141,9 @@ export default {
         type: "targetNode",
         previousParent: null,
         isVisited: false,
-        distance: Infinity
+        distance: Infinity,
+        heuristicDistance: null,
+        totalDistance: Infinity
       };
     },
     changeNodePosition(row, col) {
@@ -395,6 +407,25 @@ export default {
       this.stats.time = Math.floor(end - start);
       this.stats.visitedNodes = visitedNodesInOrder.length;
       this.stats.pathNodes = path.length;
+      this.animate(visitedNodesInOrder, path);
+    },
+    runA_star() {
+      let gridMatrixClone = this.cloneMatrix(this.gridMatrix);
+      let startNode =
+        gridMatrixClone[this.startNodePosition.row][this.startNodePosition.col];
+      let targetNode =
+        gridMatrixClone[this.targetNodePosition.row][
+          this.targetNodePosition.col
+        ];
+
+      let start = performance.now();
+      let visitedNodesInOrder = a_star(gridMatrixClone, startNode, targetNode);
+      let path = getNodesInShortestPathOrder(targetNode);
+      let end = performance.now();
+      this.stats.time = Math.floor(end - start);
+      this.stats.visitedNodes = visitedNodesInOrder.length;
+      this.stats.pathNodes = path.length;
+
       this.animate(visitedNodesInOrder, path);
     },
     cloneMatrix(matrix) {

@@ -140,7 +140,7 @@ export default {
         this.speed.nodesSpeed = 15;
         this.speed.pathSpeed = 25;
       } else {
-        this.speed.nodesSpeed = 45;
+        this.speed.nodesSpeed = 400;
         this.speed.pathSpeed = 75;
       }
       this.$emit("speedSelected", this.speed);
